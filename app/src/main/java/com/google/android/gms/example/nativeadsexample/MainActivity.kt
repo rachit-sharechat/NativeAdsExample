@@ -25,7 +25,6 @@ import com.google.android.gms.ads.doubleclick.PublisherAdRequest
 import com.google.android.gms.ads.doubleclick.PublisherAdView
 import com.google.android.gms.ads.formats.*
 import kotlinx.android.synthetic.main.activity_main.*
-import kotlinx.android.synthetic.main.ad_unified.*
 import java.util.*
 
 const val AD_MANAGER_AD_UNIT_ID = "/6499/example/banner"
@@ -53,6 +52,8 @@ class MainActivity : AppCompatActivity() {
         refreshAd(nativeads_checkbox.isChecked,
                 customtemplate_checkbox.isChecked,
                 bannerad_checkbox.isChecked)
+        cpm_picker.minValue = 0
+        cpm_picker.maxValue = 200
     }
 
     /**
@@ -250,26 +251,30 @@ class MainActivity : AppCompatActivity() {
 
         val builder = AdLoader.Builder(this, if (et_adunit.text.isNotEmpty()) et_adunit.text.toString() else AD_MANAGER_AD_UNIT_ID)
 
+        //Requesting native ads
         if (requestUnifiedNativeAds) {
             builder.forUnifiedNativeAd {
-                //                globalAd = it
-//                ad_frame.removeAllViews()
+                ad_frame.removeAllViews()
                 val adView = layoutInflater
                         .inflate(R.layout.ad_unified_native, null) as UnifiedNativeAdView
                 ad_frame.addView(adView)
+                banner_size_tv.text = ""
                 Toast.makeText(this, it.mediationAdapterClassName, Toast.LENGTH_SHORT).show()
-
                 populateUnifiedNativeAdView(it, adView)
             }
-
         }
+
+        //Requesting banner ads
         if (bannerAds) {
             builder.forPublisherAdView(OnPublisherAdViewLoadedListener { ad ->
                 Toast.makeText(this, ad.mediationAdapterClassName, Toast.LENGTH_SHORT).show()
                 ad_frame.removeAllViews()
                 ad_frame.addView(ad)
-            }, AdSize.SMART_BANNER)
+                banner_size_tv.text = "Size: ${ad.adSize.width}x${ad.adSize.height}"
+            },  AdSize.BANNER, AdSize.MEDIUM_RECTANGLE, AdSize(1, 1), AdSize.LARGE_BANNER, AdSize.FULL_BANNER, AdSize(2, 1), AdSize.LEADERBOARD)
         }
+
+        //Requesting custom templates
         if (requestCustomTemplateAds) {
             builder.forCustomTemplateAd(SIMPLE_TEMPLATE_ID,
                     { ad: NativeCustomTemplateAd ->
@@ -277,6 +282,7 @@ class MainActivity : AppCompatActivity() {
                         val adView = layoutInflater
                                 .inflate(R.layout.ad_simple_custom_template, null)
                         populateSimpleTemplateAdView(ad, adView)
+                        banner_size_tv.text = ""
                         frameLayout.removeAllViews()
                         frameLayout.addView(adView)
                     },
@@ -296,7 +302,6 @@ class MainActivity : AppCompatActivity() {
                 .build()
 
         builder.withNativeAdOptions(adOptions)
-
         val adLoader = builder.withAdListener(object : AdListener() {
             override fun onAdFailedToLoad(errorCode: Int) {
                 refresh_button.isEnabled = true
@@ -305,7 +310,12 @@ class MainActivity : AppCompatActivity() {
             }
         }).build()
 
-        adLoader.loadAd(PublisherAdRequest.Builder().build())
+        val adRequestBuilder = PublisherAdRequest.Builder().apply {
+            et_language.text?.let { addCustomTargeting("userLanguage", it.toString()) }
+            et_gender.text?.let { addCustomTargeting("userGender", it.toString()) }
+        }
+
+        adLoader.loadAd(PublisherAdRequest.Builder().addCustomTargeting("userLanguage","Hindi").addCustomTargeting("userGender","Male").addCustomTargeting("ecpm",cpm_picker.value.toString()).build())
 
         videostatus_text.text = ""
     }
