@@ -271,7 +271,7 @@ class MainActivity : AppCompatActivity() {
                 ad_frame.removeAllViews()
                 ad_frame.addView(ad)
                 banner_size_tv.text = "Size: ${ad.adSize.width}x${ad.adSize.height}"
-            },  AdSize.BANNER, AdSize.MEDIUM_RECTANGLE, AdSize(1, 1), AdSize.LARGE_BANNER, AdSize.FULL_BANNER, AdSize(2, 1), AdSize.LEADERBOARD)
+            },  AdSize(-1,-2))
         }
 
         //Requesting custom templates
@@ -313,9 +313,10 @@ class MainActivity : AppCompatActivity() {
         val adRequestBuilder = PublisherAdRequest.Builder().apply {
             et_language.text?.let { addCustomTargeting("userLanguage", it.toString()) }
             et_gender.text?.let { addCustomTargeting("userGender", it.toString()) }
+            addCustomTargeting("ecpm",cpm_picker.value.toString())
         }
 
-        adLoader.loadAd(PublisherAdRequest.Builder().addCustomTargeting("userLanguage","Hindi").addCustomTargeting("userGender","Male").addCustomTargeting("ecpm",cpm_picker.value.toString()).build())
+        adLoader.loadAd(adRequestBuilder.build())
 
         videostatus_text.text = ""
     }
